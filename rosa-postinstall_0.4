@@ -1,10 +1,9 @@
 #!/bin/bash
 #
-# Данный скрипт написан для автоматической установки
-# и автоматического удаления пакетов 
-# В Операционной системе Rosa Fresh
+# Данный скрипт написан для автоматической установки после свежей установки ОС Rosa Fresh
+# а также автоматического удаления пакетов 
 #
-echo "Установка пакетов"
+echo "Установка пакетов из списка Package_list"
 sed -n '/^#/!p' package_list | xargs urpmi --auto
 #
 echo "Удаление пакетов из списка Deleted"
@@ -18,13 +17,12 @@ echo "${mem[1]}"
 size="${mem[1]}"
 #
 echo "Проверка установки zram:"
-# вручную проверить установку Zram # swapon -s
 #
 ls /dev >/tmp/script.tmp
 tmp=$(grep "zram" </tmp/script)
 if [ -z "$tmp" ];
 then
-	echo "zram НЕТ!!"
+	echo "Zram НЕ установлен!!"
 	if [ "$size" -le 5242880 ]
 	then
 		echo "Установка Zram"
@@ -33,11 +31,11 @@ then
 		systemctl start zram.service
 		exit 1
 	else
-		echo "zram не требуется!!!"
+		echo "Zram не требуется!!!"
 		exit 1
 	fi
 else
-	echo "zram ЕСТЬ"
+	echo "Zram ЕСТЬ"
 	exit 1
 fi
 echo "КОНЕЦ!)))"
