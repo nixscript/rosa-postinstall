@@ -20,7 +20,9 @@ size="${mem[1]}"
 echo "Проверка установки zram:"
 # вручную проверить установку Zram # swapon -s
 #
-if [ -z "$(ls /dev | grep zram)" ]
+ls /dev >/tmp/script.tmp
+tmp=$(grep "zram" </tmp/script)
+if [ -z "$tmp" ];
 then
 	echo "zram НЕТ!!"
 	if [ "$size" -le 5242880 ]
