@@ -1,0 +1,42 @@
+#!/bin/bash
+#
+# Данный скрипт написан для автоматической установки
+# и автоматического удаления пакетов 
+# В Операционной системе Rosa Fresh
+#
+echo "Установка пакетов"
+sed -n '/^#/!p' package_list | xargs urpmi --auto
+#
+echo "Удаление пакетов из списка Deleted"
+#
+sed -n '/^#/!p' deleted | xargs urpme --auto
+#
+#
+echo "Проверка ОЗУ"
+mem=(`grep -i "MemTotal" /proc/meminfo`)
+echo "${mem[1]}"
+size="${mem[1]}"
+#
+echo "Проверка установки zram:"
+# вручную проверить установку Zram # swapon -s
+#
+if [ -z "`ls /dev | grep zram`" ]
+then
+	echo "zram НЕТ!!"
+	if [ $size -le 5242880 ]
+	then
+		echo "Установка Zram"
+		urpmi --force zramstart
+		systemctl enable zram.service
+		systemctl start zram.service
+		exit 1
+	else
+		echo "zram не требуется!!!"
+		exit 1
+	fi
+else
+	echo "zram ЕСТЬ"
+	exit 1
+fi
+echo "КОНЕЦ!)))"
+exit 0
