@@ -10,7 +10,7 @@ addons:
     - shellcheck
 
 script:
- - shellcheck -s bash ./github-check.sh
+ - shellcheck -s bash ./rosa-postinstall
 
 notifications:
     webhooks:
