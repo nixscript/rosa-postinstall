@@ -12,7 +12,9 @@ sed -n '/^#/!p' deleted | xargs urpme --auto
 #
 echo "Проверка ОЗУ"
 mem=$(grep -i "MemTotal" </proc/meminfo)
-echo "${mem[1]}"
+mem="${mem%[ ]*}"
+mem="${mem##*[ ]}"
+echo "$mem"
 size="${mem[1]}"
 #
 echo "Проверка установки zram:"
@@ -28,15 +30,12 @@ then
 		urpmi --force zramstart
 		systemctl enable zram.service
 		systemctl start zram.service
-		exit 1
 	else
 		echo "Zram не требуется!!!"
-		exit 1
 	fi
 else
 	echo "Zram ЕСТЬ"
-	exit 1
 fi
 rm -rf /tmp/script/tmp
-echo "КОНЕЦ!)))"
+echo "КОНЕЦ!!!"
 exit 0
