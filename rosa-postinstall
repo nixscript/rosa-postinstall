@@ -18,11 +18,11 @@ size="${mem[1]}"
 echo "Проверка установки zram:"
 #
 ls /dev >/tmp/script.tmp
-tmp=$(grep "zram" </tmp/script)
+tmp=$(grep "zram" </tmp/script.tmp)
 if [ -z "$tmp" ];
 then
 	echo "Zram НЕ установлен!!"
-	if [ "$size" -le 5242880 ]
+	if [[ "$size" -le 5242880 ]]
 	then
 		echo "Установка Zram"
 		urpmi --force zramstart
