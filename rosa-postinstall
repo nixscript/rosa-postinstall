@@ -88,10 +88,18 @@ zram_config(){
 		else
 			echo "Zram НЕ установлен!!"
 			echo "Установка Zram"
-			urpmi --force --auto zramstart
-			systemctl daemon-reload
-			systemctl enable zram.service
-			systemctl start zram.service
+			if urpmi --force --auto zramstart
+				then
+					systemctl daemon-reload
+					if systemctl enable zram.service && systemctl start zram.service
+						then
+							:
+						else
+							echo "Ошибка запуска zram!"
+					fi
+				else
+					echo "Ошибка установки zram!"
+			fi
 	fi
 }
 
