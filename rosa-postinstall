@@ -1,7 +1,10 @@
 #!/bin/bash
 #
 # Скрипт автоматической установки пакетов после свежей установки ОС Rosa Fresh
-# Автор: Кастерин Юрий vk.com/yykast
+
+# Авторы: 
+# * Кастерин Юрий vk.com/yykast (изначальный автор)
+# * Михаил Новоселов https://nixtux.ru <mikhailnov@dumalogiya.ru> (доработки)
 #
 
 delete_list="./deleted"
