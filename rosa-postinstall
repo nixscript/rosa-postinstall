@@ -3,39 +3,116 @@
 # Скрипт автоматической установки пакетов после свежей установки ОС Rosa Fresh
 # Автор: Кастерин Юрий vk.com/yykast
 #
-echo "Установка пакетов из списка Package_list"
-sed -n '/^#/!p' package_list | xargs urpmi --auto
-#
-echo "Удаление пакетов из списка Deleted"
-#
-sed -n '/^#/!p' deleted | xargs urpme --auto
-#
-echo "Проверка ОЗУ"
-mem=$(grep -i "MemTotal" </proc/meminfo)
-mem="${mem%[ ]*}"
-mem="${mem##*[ ]}"
-echo "$mem"
-size="${mem[1]}"
-#
-echo "Проверка установки zram:"
-#
-ls /dev >/tmp/script.tmp
-tmp=$(grep "zram" </tmp/script.tmp)
-if [ -z "$tmp" ];
-then
-	echo "Zram НЕ установлен!!"
-	if [[ "$size" -le 5242880 ]]
-	then
-		echo "Установка Zram"
-		urpmi --force zramstart
-		systemctl enable zram.service
-		systemctl start zram.service
-	else
-		echo "Zram не требуется!!!"
+
+delete_list="./deleted"
+install_list="./package_list"
+success_pkg_delete_list=""
+error_pkg_delete_list=""
+success_pkg_install_list=""
+error_pkg_install_list=""
+
+echo_err(){
+	echo "$@" 1>&2
+}
+
+remove_orphans(){
+	echo "Начало удаления пакетов-сирот"
+	if urpme --auto-orphans --auto --auto-select
+		then echo "Пакеты-сирот успешно удалены"
+		else echo "Во время удаления пакетов сирот возникли какие-то ошибки"
 	fi
-else
-	echo "Zram ЕСТЬ"
+}
+
+system_update(){
+	echo "Начало обновления системы"
+	if urpmi --auto-update --auto --auto-select
+		then echo "Система успешно обновлена"
+		else echo "Во время обновления системы возникли какие-то ошибки"
+	fi
+}
+
+remove_list(){
+	echo "Удаление пакетов из списка $delete_list"
+	if [ -f "$delete_list" ]
+		then
+			while read line
+			do
+				if urpme --auto "$line"
+					then
+						echo "Пакет $line успешно удален"
+						success_pkg_delete_list="${success_pkg_delete_list} $line"
+					else
+						echo "Ошибка при удалении пакета $line"
+						error_pkg_delete_list="${error_pkg_delete_list} $line"
+				fi
+			done  < <(grep -v ^# "$delete_list")
+		else
+			echo "Нет списка пакетов для удаления"
+	fi
+}
+
+install_list(){
+	echo "Установка пакетов из списка $install_list"
+	if [ -f "$install_list" ]
+		then
+			while read line
+			do
+				if urpmi --auto "$line"
+					then
+						echo "Пакет $line успешно установлен"
+						success_pkg_install_list="${success_pkg_install_list} $line"
+					else
+						echo "Ошибка при удалении пакета $line"
+						error_pkg_install_list="${error_pkg_install_list} $line"
+				fi
+			done  < <(grep -v ^# "$install_list")
+		else
+			echo "Нет списка пакетов для установки"
+	fi
+}
+
+zram_config(){
+	mem=""
+	mem="$(grep -i "MemTotal" </proc/meminfo)"
+	mem="${mem%[ ]*}"
+	mem="${mem##*[ ]}"
+	size="${mem[1]}"
+	echo "Размер ОЗУ: ${mem}, ${size}"
+	# -ge >=
+	if /bin/ls /dev | grep ^zram || [ "$size" -ge 5242880 ]
+		then
+			echo "Zram не требуется или уже есть!!!"
+		else
+			echo "Zram НЕ установлен!!"
+			echo "Установка Zram"
+			urpmi --force --auto zramstart
+			systemctl daemon-reload
+			systemctl enable zram.service
+			systemctl start zram.service
+	fi
+}
+
+if [ "$(id -u)" != "0" ]; then
+	echo_err "Скрипт нужно запустить от root!"
+	echo_err "Run this script as root!"
+	exit 1
 fi
-rm -rf /tmp/script/tmp
-echo "КОНЕЦ!!!"
-exit 0
+
+remove_list
+remove_orphans
+system_update
+install_list
+remove_orphans
+zram_config
+
+echo ""
+echo "###====================================###"
+echo ""
+echo -e "Список успешно удаленных пакетов:\n${success_pkg_delete_list}"
+echo ""
+echo -e "Список пакетов, при удалении которых произошли ошибки:\n${error_pkg_delete_list}"
+echo ""
+echo -e "Список успешно установленных пакетов:\n${success_pkg_install_list}"
+echo ""
+echo -e "Список пакетов, при установке которых произошли ошибки:\n${error_pkg_install_list}"
+echo ""
